@@ -21,7 +21,7 @@ BUG：目前还不能很好的识别通过Mac App Store安装的程序，需要�
 会自动生成两个文件：
 
 non_brew_non_mas_apps.txt	包含，非homebrew安装的app和非Mac App Store安装的APP
-
+ 
 brew_install_commands.txt	包含，可迁移的APP
 
 
