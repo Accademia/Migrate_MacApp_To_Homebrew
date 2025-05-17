@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # 输出文件名
 OUTPUT_FILE="non_brew_non_mas_apps.txt"
