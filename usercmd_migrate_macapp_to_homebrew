@@ -13,31 +13,31 @@ AVAILABLE_CASKS_FILE="$TMP_DIR/available_casks.txt"
 SYSTEM_APPS_FILE="$TMP_DIR/system_apps.txt"
 
 # 强制更新 Spotlight 索引
-echo "正在强制更新 Spotlight 索引..."
+echo -e "正在强制更新 Spotlight 索引..."
 mdimport /Applications
 
 # 获取所有已安装的应用程序
-echo "正在查找所有已安装的应用程序..."
+echo -e "正在查找所有已安装的应用程序..."
 find /Applications -name "*.app" -maxdepth 3 2>/dev/null | sort > "$ALL_APPS_FILE"
 find ~/Applications -name "*.app" -maxdepth 3 2>/dev/null | sort >> "$ALL_APPS_FILE"
 
 # 获取系统应用信息（包括 Mac App Store 应用）
-echo "正在获取系统应用信息..."
+echo -e "正在获取系统应用信息..."
 system_profiler SPApplicationsDataType -json > "$SYSTEM_APPS_FILE"
 
 # 获取通过 Homebrew 安装的应用程序
-echo "正在查找通过 Homebrew 安装的应用程序..."
+echo -e "正在查找通过 Homebrew 安装的应用程序..."
 if command -v brew &> /dev/null; then
     # 获取已安装的 cask 列表
     brew list --cask > "$BREW_CASK_FILE"
-    echo "获取所有可用的 Homebrew cask 应用..."
+    echo -e "获取所有可用的 Homebrew cask 应用..."
     brew search --casks "" > "$AVAILABLE_CASKS_FILE"
 
     # 初始化 Homebrew 应用路径文件
     > "$BREW_APP_PATHS_FILE"
 
     total_casks=$(wc -l < "$BREW_CASK_FILE")
-    echo "正在并行获取 $total_casks 个已安装 cask 的详细信息..."
+    echo -e "正在并行获取 $total_casks 个已安装 cask 的详细信息..."
 
     # 创建临时目录存储 cask 的 JSON 文件
     INFO_DIR="$TMP_DIR/cask_info"
@@ -71,39 +71,39 @@ if command -v brew &> /dev/null; then
         if [[ -n "$app_paths" ]]; then
             while IFS= read -r app_path; do
                 # 替换 ~ 为用户的 home 目录
-                app_path=$(echo "$app_path" | sed "s|~|$HOME|g")
+                app_path=$(echo -e "$app_path" | sed "s|~|$HOME|g")
                 # 规范化路径
                 if [[ "$app_path" != /* ]]; then
                     app_path="/Applications/$app_path"
                 fi
                 # 检查路径是否存在并转为真实路径
                 if [[ -d "$app_path" ]]; then
-                    real_path=$(realpath "$app_path" 2>/dev/null || echo "$app_path")
-                    echo "$real_path" >> "$BREW_APP_PATHS_FILE"
+                    real_path=$(realpath "$app_path" 2>/dev/null || echo -e "$app_path")
+                    echo -e "$real_path" >> "$BREW_APP_PATHS_FILE"
                 fi
             done <<< "$app_paths"
         fi
     done
 else
-    echo "警告: 未找到 'brew' 命令，无法检测 Homebrew 应用。"
+    echo -e "警告: 未找到 'brew' 命令，无法检测 Homebrew 应用。"
     touch "$BREW_CASK_FILE" "$BREW_APP_PATHS_FILE" "$AVAILABLE_CASKS_FILE"
 fi
 
 # 比较应用列表
-echo "正在比较应用列表..."
+echo -e "正在比较应用列表..."
 rm -f "$OUTPUT_FILE" "$INSTALL_COMMANDS_FILE"
 touch "$OUTPUT_FILE" "$INSTALL_COMMANDS_FILE"
 
-echo "找到以下非 Homebrew 非 Mac App Store 安装的应用程序:" | tee "$OUTPUT_FILE"
-echo "============================================================" | tee -a "$OUTPUT_FILE"
-echo "# 可通过 Homebrew 重新安装的应用程序安装命令：" > "$INSTALL_COMMANDS_FILE"
-echo "# 运行方法：逐行复制以下命令到终端，或将整个文件作为脚本执行" >> "$INSTALL_COMMANDS_FILE"
-echo "" >> "$INSTALL_COMMANDS_FILE"
+echo -e "找到以下非 Homebrew 非 Mac App Store 安装的应用程序:" | tee "$OUTPUT_FILE"
+echo -e "============================================================" | tee -a "$OUTPUT_FILE"
+echo -e "# 可通过 Homebrew 重新安装的应用程序安装命令：" > "$INSTALL_COMMANDS_FILE"
+echo -e "# 运行方法：逐行复制以下命令到终端，或将整个文件作为脚本执行" >> "$INSTALL_COMMANDS_FILE"
+echo -e "" >> "$INSTALL_COMMANDS_FILE"
 
 # 函数：检查应用是否为 Mac App Store 应用
 is_mas_app() {
     local app_path="$1"
-    local real_path=$(realpath "$app_path" 2>/dev/null || echo "$app_path")
+    local real_path=$(realpath "$app_path" 2>/dev/null || echo -e "$app_path")
 
     # 方法 1: 检查 _MASReceipt/receipt 文件
     if [[ -f "$real_path/Contents/_MASReceipt/receipt" ]]; then
@@ -133,7 +133,7 @@ is_mas_app() {
 # 函数：检查应用是否通过 Homebrew 安装
 is_brew_app() {
     local app_path="$1"
-    local real_path=$(realpath "$app_path" 2>/dev/null || echo "$app_path")
+    local real_path=$(realpath "$app_path" 2>/dev/null || echo -e "$app_path")
     local app_name=$(basename "$app_path" .app | tr '[:upper:]' '[:lower:]')
 
     # 方法 1: 检查路径是否在 BREW_APP_PATHS_FILE 中
@@ -142,7 +142,7 @@ is_brew_app() {
     fi
 
     # 方法 2: 检查应用名是否与已安装的 cask 匹配
-    cask_name=$(echo "$app_name" | sed 's/ /-/g')
+    cask_name=$(echo -e "$app_name" | sed 's/ /-/g')
     if grep -Fx "$cask_name" "$BREW_CASK_FILE" >/dev/null; then
         return 0
     fi
@@ -155,8 +155,8 @@ while IFS= read -r app_path; do
     [[ ! "$app_path" =~ \.app$ ]] && continue
 
     app_name=$(basename "$app_path" .app)
-    app_name_lower=$(echo "$app_name" | tr '[:upper:]' '[:lower:]')
-    real_path=$(realpath "$app_path" 2>/dev/null || echo "$app_path")
+    app_name_lower=$(echo -e "$app_name" | tr '[:upper:]' '[:lower:]')
+    real_path=$(realpath "$app_path" 2>/dev/null || echo -e "$app_path")
 
     # 检查是否为 Mac App Store 应用
     if is_mas_app "$real_path"; then
@@ -169,7 +169,7 @@ while IFS= read -r app_path; do
     fi
 
     # 输出非 Homebrew 非 Mac App Store 安装的应用
-    echo "$app_path" | tee -a "$OUTPUT_FILE"
+    echo -e "$app_path" | tee -a "$OUTPUT_FILE"
 
     # 查找对应的 Homebrew cask
     found_cask=""
@@ -177,19 +177,19 @@ while IFS= read -r app_path; do
     if [[ -n "$matched_cask" ]]; then
         found_cask="$matched_cask"
     elif [[ -z "$found_cask" ]]; then
-        with_dash=$(echo "$app_name_lower" | sed 's/ /-/g')
+        with_dash=$(echo -e "$app_name_lower" | sed 's/ /-/g')
         matched_cask=$(grep -i "^$with_dash$" "$AVAILABLE_CASKS_FILE" | head -1)
         [[ -n "$matched_cask" ]] && found_cask="$matched_cask"
     fi
 
     if [[ -n "$found_cask" ]]; then
-        echo "brew install --cask $found_cask  # 对应 $app_path" >> "$INSTALL_COMMANDS_FILE"
+        echo -e "brew install --cask $found_cask  # 对应 $app_path" >> "$INSTALL_COMMANDS_FILE"
     fi
 done < "$ALL_APPS_FILE"
 
-echo "============================================================" | tee -a "$OUTPUT_FILE"
-echo "结果已保存至 $OUTPUT_FILE 文件" | tee -a "$OUTPUT_FILE"
-echo "可通过 Homebrew 安装的命令已保存至 $INSTALL_COMMANDS_FILE 文件" | tee -a "$OUTPUT_FILE"
+echo -e "============================================================" | tee -a "$OUTPUT_FILE"
+echo -e "结果已保存至 $OUTPUT_FILE 文件" | tee -a "$OUTPUT_FILE"
+echo -e "可通过 Homebrew 安装的命令已保存至 $INSTALL_COMMANDS_FILE 文件" | tee -a "$OUTPUT_FILE"
 
 # 清理临时文件
 rm -rf "$TMP_DIR"
